@@ -1,0 +1,7 @@
+@import 'vuetify/styles';
+@import '@mdi/font/css/materialdesignicons.css';
+
+body {
+  margin: 0;
+  padding: 0;
+}
