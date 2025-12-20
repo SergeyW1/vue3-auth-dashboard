@@ -6,17 +6,43 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts",
+    "lint:fix": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix",
+    "format": "prettier --write \"src/**/*.{js,ts,vue,json,css,scss,md}\"",
+    "format:check": "prettier --check \"src/**/*.{js,ts,vue,json,css,scss,md}\"",
+    "type-check": "vue-tsc --noEmit"
   },
   "dependencies": {
-    "vue": "^3.5.24"
+    "@mdi/font": "^7.4.47",
+    "axios": "^1.13.2",
+    "pinia": "^3.0.4",
+    "vue": "^3.5.24",
+    "vue-router": "^4.6.3",
+    "vuetify": "^3.11.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.1",
     "@types/node": "^24.10.1",
+    "@typescript-eslint/eslint-plugin": "^8.48.0",
+    "@typescript-eslint/parser": "^8.48.0",
     "@vitejs/plugin-vue": "^6.0.1",
     "@vue/tsconfig": "^0.8.1",
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "eslint-plugin-vue": "^10.6.2",
+    "globals": "^16.5.0",
+    "msw": "^2.12.4",
+    "prettier": "^3.7.3",
+    "sass": "^1.94.2",
     "typescript": "~5.9.3",
     "vite": "^7.2.4",
     "vue-tsc": "^3.1.4"
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
   }
 }

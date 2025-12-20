@@ -1,0 +1,293 @@
+# 📂 Структура проекта - Feature-Sliced Design (FSD)
+
+## Обзор архитектуры
+
+Проект использует **Feature-Sliced Design (FSD)** - методологию организации кода, которая разделяет приложение на слои и слайсы.
+
+## Структура проекта
+
+```
+src/
+├── shared/           # Переиспользуемый код
+│   ├── api/          # Axios инстанс и интерсепторы
+│   ├── plugins/      # Плагины Vue (vuetify, msw)
+│   ├── styles/       # Глобальные стили
+│   ├── config/       # Конфигурация
+│   ├── ui/           # Переиспользуемые UI компоненты
+│   ├── types/        # Общие типы
+│   ├── composables/  # Общие composables
+│   ├── utils/        # Утилиты
+│   └── index.ts      # Barrel export
+├── entities/         # Бизнес-сущности
+│   ├── user/         # Сущность User/Profile
+│   │   ├── types.ts  # Типы User, Profile
+│   │   ├── api/      # API запросы к user
+│   │   │   └── index.ts
+│   │   └── index.ts  # Barrel export
+│   ├── product/      # Сущность Product
+│   │   ├── types.ts  # Типы Product
+│   │   ├── api/      # API запросы к product (если нужны)
+│   │   │   └── index.ts
+│   │   └── index.ts  # Barrel export
+│   └── index.ts      # Barrel export
+├── pages/            # Страницы приложения
+│   ├── auth/         # Страница авторизации
+│   │   ├── ui/       # LoginPage.vue
+│   │   ├── api/      # authApi.ts
+│   │   ├── config/   # constants.ts
+│   │   ├── types.ts  # LoginCredentials
+│   │   ├── store/    # authStore.ts
+│   │   └── index.ts  # Barrel export
+│   ├── dashboard/    # Главная страница
+│   │   ├── ui/       # HomePage.vue
+│   │   └── index.ts  # Barrel export
+│   ├── profile/      # Страница профиля
+│   │   ├── ui/       # ProfileEditPage.vue
+│   │   ├── useProfileEdit.ts  # Composable
+│   │   ├── store/    # profileStore.ts
+│   │   └── index.ts  # Barrel export
+│   └── index.ts      # Barrel export
+└── app/              # Инфраструктура приложения
+    ├── layouts/      # AppLayout.vue
+    ├── router/       # index.ts
+    ├── mocks/        # MSW моки
+    └── index.ts      # Barrel export
+```
+
+## Слои FSD
+
+### 1. **shared/** - Переиспользуемый код
+
+Содержит код, который используется в нескольких местах приложения:
+
+- **api/** - Axios инстанс с настройкой интерсепторов
+- **plugins/** - Плагины Vue (vuetify, msw)
+- **styles/** - Глобальные стили
+- **config/** - Конфигурация приложения
+- **ui/** - Переиспользуемые UI компоненты (Button, Input, Card и т.д.)
+- **types/** - Общие типы TypeScript
+- **composables/** - Общие composables
+- **utils/** - Утилиты и хелперы
+
+**Правило:** Если код используется только в одном месте - он не должен быть в shared.
+
+### 2. **entities/** - Бизнес-сущности
+
+Содержит бизнес-сущности приложения (User, Product, Order и т.д.):
+
+- **types.ts** - Типы сущности (БЕЗ папки model/)
+- **api/** - API запросы к сущности
+- **index.ts** - Barrel export для публичного API
+
+**Правило:** Entities не зависят от pages или app. Они могут использовать только shared.
+
+### 3. **pages/** - Страницы приложения
+
+Содержит страницы приложения и их бизнес-логику:
+
+- **ui/** - UI компоненты страницы
+- **api/** - API запросы страницы (если специфичны для страницы)
+- **config/** - Конфигурация страницы
+- **types.ts** - Типы страницы (БЕЗ папки model/)
+- **store/** - Store страницы (Pinia)
+- **use\*.ts** - Composables страницы (в корне, БЕЗ папки model/)
+- **index.ts** - Barrel export для публичного API
+
+**Правило:** Pages могут использовать entities и shared, но не app.
+
+### 4. **app/** - Инфраструктура приложения
+
+Содержит код для инициализации и настройки приложения:
+
+- **layouts/** - Лейауты приложения
+- **router/** - Конфигурация роутинга
+- **mocks/** - MSW моки для разработки
+
+**Правило:** App может использовать pages, entities и shared.
+
+## Правила импорта
+
+### Разрешенные импорты (сверху вниз):
+
+- ✅ `app` → может импортировать из `pages`, `entities`, `shared`
+- ✅ `pages` → может импортировать из `entities`, `shared`
+- ✅ `entities` → может импортировать из `shared`
+- ✅ `shared` → не может импортировать из других слоев
+
+### Запрещенные импорты:
+
+- ❌ `entities` → `pages`
+- ❌ `entities` → `app`
+- ❌ `pages` → `app`
+- ❌ `shared` → любой другой слой
+
+## Barrel Exports
+
+**КРИТИЧЕСКИ ВАЖНО:** На каждом уровне в `entities` и `pages` должен быть `index.ts` для реэкспорта публичного API.
+
+### Структура barrel exports:
+
+```typescript
+// entities/user/index.ts
+export * from './types';
+export * from './api';
+
+// entities/user/api/index.ts
+export * from './userApi';
+
+// entities/product/index.ts
+export * from './types';
+
+// entities/index.ts
+export * from './user';
+export * from './product';
+
+// pages/auth/index.ts
+export { default as LoginPage } from './ui/LoginPage.vue';
+export * from './api/authApi';
+export * from './store/authStore';
+export * from './config/constants';
+export * from './types';
+
+// pages/dashboard/index.ts
+export { default as HomePage } from './ui/HomePage.vue';
+
+// pages/profile/index.ts
+export { default as ProfileEditPage } from './ui/ProfileEditPage.vue';
+export * from './useProfileEdit';
+export * from './store/profileStore';
+
+// pages/index.ts
+export * from './auth';
+export * from './dashboard';
+export * from './profile';
+```
+
+### Правила barrel exports:
+
+1. **entities** - каждый уровень должен иметь `index.ts`:
+   - `entities/index.ts` - реэкспортирует все сущности
+   - `entities/user/index.ts` - реэкспортирует types и api
+   - `entities/user/api/index.ts` - реэкспортирует userApi
+
+2. **pages** - каждый уровень должен иметь `index.ts`:
+   - `pages/index.ts` - реэкспортирует все страницы
+   - `pages/auth/index.ts` - реэкспортирует все публичные API страницы auth
+   - `pages/dashboard/index.ts` - реэкспортирует все публичные API страницы dashboard
+   - `pages/profile/index.ts` - реэкспортирует все публичные API страницы profile
+
+## Отсутствие папки model/
+
+**ВАЖНО:** В проекте НЕ используется папка `model/`. Все типы и composables находятся в корне соответствующих папок:
+
+- ✅ `entities/user/types.ts` (НЕ `entities/user/model/types.ts`)
+- ✅ `pages/auth/types.ts` (НЕ `pages/auth/model/types.ts`)
+- ✅ `pages/profile/useProfileEdit.ts` (НЕ `pages/profile/model/useProfileEdit.ts`)
+
+## API в shared/api
+
+**ВАЖНО:** Axios клиент находится в `shared/api/axios.ts` (БЕЗ папки `lib/`):
+
+- ✅ `shared/api/axios.ts`
+- ✅ `shared/api/index.ts` - barrel export
+
+## Где что находится
+
+| Что искать            | Где найти              |
+| --------------------- | ---------------------- |
+| Страницы              | `pages/*/ui/*Page.vue` |
+| Компоненты страницы   | `pages/*/ui/`          |
+| Общие компоненты      | `shared/ui/`           |
+| API запросы сущностей | `entities/*/api/`      |
+| API запросы страниц   | `pages/*/api/`         |
+| Stores                | `pages/*/store/`       |
+| Типы сущностей        | `entities/*/types.ts`  |
+| Типы страниц          | `pages/*/types.ts`     |
+| Composables страниц   | `pages/*/use*.ts`      |
+| Роуты                 | `app/router/index.ts`  |
+| Лейауты               | `app/layouts/`         |
+| Axios клиент          | `shared/api/axios.ts`  |
+| Плагины               | `shared/plugins/`      |
+| Глобальные стили      | `shared/styles/`       |
+
+## Примеры использования
+
+### Импорт из entities:
+
+```typescript
+// В pages или app
+import type { User, Profile } from '@/entities/user';
+import { fetchProfile, updateProfile } from '@/entities/user/api';
+```
+
+### Импорт из pages:
+
+```typescript
+// В app/router
+import { LoginPage } from '@/pages/auth';
+import { HomePage } from '@/pages/dashboard';
+import { ProfileEditPage } from '@/pages/profile';
+```
+
+### Импорт из shared:
+
+```typescript
+// Везде
+import { apiClient } from '@/shared/api';
+import { vuetify, initMSW } from '@/shared/plugins';
+import '@/shared/styles';
+```
+
+## Создание новой сущности
+
+1. Создать структуру:
+
+```bash
+mkdir -p src/entities/[name]/{api}
+touch src/entities/[name]/types.ts
+touch src/entities/[name]/api/[name]Api.ts
+touch src/entities/[name]/api/index.ts
+touch src/entities/[name]/index.ts
+```
+
+2. Создать типы в `entities/[name]/types.ts`
+
+3. Создать API в `entities/[name]/api/[name]Api.ts`
+
+4. Создать barrel exports:
+   - `entities/[name]/api/index.ts` - реэкспортирует API
+   - `entities/[name]/index.ts` - реэкспортирует types и api
+
+5. Обновить `entities/index.ts` - добавить экспорт новой сущности
+
+## Создание новой страницы
+
+1. Создать структуру:
+
+```bash
+mkdir -p src/pages/[name]/{ui,api,config,store}
+touch src/pages/[name]/types.ts
+touch src/pages/[name]/ui/[Name]Page.vue
+touch src/pages/[name]/index.ts
+```
+
+2. Создать компонент страницы в `pages/[name]/ui/[Name]Page.vue`
+
+3. Создать barrel export в `pages/[name]/index.ts`
+
+4. Обновить `pages/index.ts` - добавить экспорт новой страницы
+
+5. Добавить роут в `app/router/index.ts`
+
+## Правила именования
+
+- **Сущности**: `entities/user/`, `entities/product/` - в единственном числе
+- **Страницы**: `pages/auth/`, `pages/dashboard/` - в единственном числе
+- **Файлы типов**: `types.ts` (НЕ `model/types.ts`)
+- **Composables**: `useProfileEdit.ts` (НЕ `model/useProfileEdit.ts`)
+- **Barrel exports**: `index.ts` на каждом уровне
+
+---
+
+**Версия документа:** 1.0  
+**Дата обновления:** 2024
