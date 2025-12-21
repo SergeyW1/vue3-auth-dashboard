@@ -2,6 +2,8 @@
 import { ref, onMounted } from 'vue';
 import { apiClient } from '@/shared/api';
 import type { Product, ProductsResponse } from '@/entities/product';
+import { headersProducts } from './constants';
+import { formatDate } from '@/shared/utils/date';
 
 const products = ref<Product[]>([]);
 
@@ -10,7 +12,9 @@ const fetchProducts = async () => {
     const response = await apiClient.get<ProductsResponse>('/products');
     products.value = response.data.data;
   } catch (error) {
-    console.error('Ошибка загрузки продуктов:', error);
+    if (error instanceof Error) {
+      throw error;
+    }
   }
 };
 
@@ -20,29 +24,74 @@ onMounted(() => {
 </script>
 
 <template>
-  <div>
-    <h1>Home Page</h1>
-
-    <slot name="content" />
+  <div class="table-container">
+    <v-data-table
+      :items="products"
+      class="table"
+      :headers="headersProducts"
+      fixed-header
+    >
+      <template #[`item.image`]="{ value }">
+        <div v-if="value" class="image-container">
+          <v-img
+            :src="value"
+            :alt="`Product image`"
+            width="80"
+            height="80"
+            cover
+            class="product-image"
+          />
+        </div>
+        <span v-else class="text-gray">Нет изображения</span>
+      </template>
+      <template #[`item.createdAt`]="{ value }">
+        {{ formatDate(value) }}
+      </template>
+      <template #[`item.updatedAt`]="{ value }">
+        {{ formatDate(value) }}
+      </template>
+    </v-data-table>
   </div>
-
-  <v-container
-    class="d-flex flex-column align-center justify-center"
-    style="min-height: 100vh"
-  >
-    <v-card class="pa-8">
-      <v-card-title class="text-h4 mb-4">Главная страница</v-card-title>
-      <v-card-text>
-        <p class="text-body-1">Добро пожаловать на главную страницу!</p>
-      </v-card-text>
-
-      <ul>
-        <li v-for="product in products" :key="product.id">
-          <h2>{{ product.name }}</h2>
-          <p>{{ product.description }}</p>
-          <p>{{ product.price }}</p>
-        </li>
-      </ul>
-    </v-card>
-  </v-container>
 </template>
+
+<style scoped>
+.table-container {
+  height: calc(100vh - 64px);
+  overflow: hidden;
+  padding: 24px;
+}
+
+.table {
+  height: 100%;
+}
+
+.table :deep(.v-data-table__wrapper) {
+  height: 100%;
+  overflow-y: auto;
+}
+
+.table :deep(.v-table thead) {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+}
+
+.table :deep(.v-table thead th) {
+  background-color: rgb(var(--v-theme-surface));
+  position: relative;
+}
+.image-container {
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.product-image {
+  border-radius: 4px;
+}
+</style>
