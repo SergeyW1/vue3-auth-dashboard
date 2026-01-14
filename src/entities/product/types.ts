@@ -10,6 +10,20 @@ export interface Product {
   updatedAt: string;
 }
 
+export interface ProductCreateData {
+  name: string;
+  description?: string;
+  price: number;
+  category?: string;
+  image?: string;
+  stock?: number;
+}
+
+export type ProductUpdateData = Pick<
+  Product,
+  'name' | 'description' | 'price' | 'stock'
+>;
+
 export interface ProductsResponse {
   data: Product[];
   meta: {
@@ -22,4 +36,6 @@ export interface ProductsResponse {
 export interface ProductsQueryParams {
   page?: number;
   limit?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }

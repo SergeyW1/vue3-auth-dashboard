@@ -1,6 +1,7 @@
 import { http, HttpResponse } from 'msw';
 import type { Profile, ProfileUpdateData } from '@/entities/user';
 import { getProductsHandler } from './products';
+import type { Product, ProductCreateData } from '@/entities/product';
 
 /**
  * Моковые данные профиля
@@ -50,4 +51,61 @@ export const handlers = [
 
   // Получение списка товаров с пагинацией
   getProductsHandler,
+
+  http.delete('/api/products/:productId', req => {
+    const { productId } = req.params;
+
+    return HttpResponse.json({ message: `Product ${productId} deleted` });
+  }),
+
+  http.post('/api/products', async ({ request }) => {
+    const data = (await request.json()) as ProductCreateData;
+
+    if (!data.name || !data.price) {
+      return HttpResponse.json(
+        { error: 'Name and price are required' },
+        { status: 400 }
+      );
+    }
+
+    const newProduct: Product = {
+      id: crypto.randomUUID(),
+      name: data.name,
+      stock: data.stock ?? 0,
+      description: data.description ?? '',
+      price: data.price,
+      category: data.category ?? 'default',
+      image: data.image,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    return HttpResponse.json<Product>(newProduct, { status: 201 });
+  }),
+
+  http.put('/api/products/:productId', async ({ request, params }) => {
+    const { productId } = params;
+    const data = (await request.json()) as ProductCreateData;
+
+    if (!data.name || !data.price) {
+      return HttpResponse.json(
+        { error: 'Name and price are required' },
+        { status: 400 }
+      );
+    }
+
+    const updatedProduct: Product = {
+      id: String(productId),
+      name: data.name,
+      stock: data.stock ?? 0,
+      description: data.description ?? '',
+      price: data.price,
+      category: data.category ?? 'default',
+      image: data.image,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    return HttpResponse.json<Product>(updatedProduct);
+  }),
 ];
