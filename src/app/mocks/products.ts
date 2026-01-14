@@ -238,9 +238,16 @@ export const getProductsHandler = http.get('/api/products', ({ request }) => {
   const url = new URL(request.url);
   const pageParam = url.searchParams.get('page');
   const limitParam = url.searchParams.get('limit');
+  const sortByParam = url.searchParams.get('sortBy');
+  const sortOrderParam = url.searchParams.get('sortOrder');
 
   const page = pageParam !== null ? Number(pageParam) : 1;
   const limit = limitParam !== null ? Number(limitParam) : 10;
+  const sortBy = sortByParam || null;
+  const sortOrder =
+    sortOrderParam === 'asc' || sortOrderParam === 'desc'
+      ? sortOrderParam
+      : 'asc';
 
   // Валидация параметров
   if (page < 1 || limit < 1 || limit > 100) {
@@ -250,15 +257,41 @@ export const getProductsHandler = http.get('/api/products', ({ request }) => {
     );
   }
 
+  // Копируем массив для сортировки
+  let sortedProducts = [...allProducts];
+
+  // Применяем сортировку, если указана
+  if (sortBy) {
+    sortedProducts.sort((a, b) => {
+      const aValue = a[sortBy as keyof Product];
+      const bValue = b[sortBy as keyof Product];
+
+      if (aValue === undefined || bValue === undefined) {
+        return 0;
+      }
+
+      let comparison = 0;
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        comparison = aValue.localeCompare(bValue);
+      } else if (typeof aValue === 'number' && typeof bValue === 'number') {
+        comparison = aValue - bValue;
+      } else {
+        comparison = String(aValue).localeCompare(String(bValue));
+      }
+
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+  }
+
   // Вычисление offset и слайсинг массива
   const offset = (page - 1) * limit;
-  const paginatedProducts = allProducts.slice(offset, offset + limit);
+  const paginatedProducts = sortedProducts.slice(offset, offset + limit);
 
   // Формирование ответа
   const response: ProductsResponse = {
     data: paginatedProducts,
     meta: {
-      total: allProducts.length,
+      total: sortedProducts.length,
       page,
       limit,
     },

@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import type { Profile, ProfileUpdateData } from '@/entities/user';
-import { fetchProfile, updateProfile } from '@/entities/user/api';
+import { userApi } from '@/entities/user/api/userApi';
 
 export const useProfileStore = defineStore('profile', {
   state: () => ({
@@ -14,7 +14,7 @@ export const useProfileStore = defineStore('profile', {
       this.isLoading = true;
       this.error = null;
       try {
-        this.profile = await fetchProfile();
+        this.profile = await userApi.fetchProfile();
       } catch (error) {
         this.error = 'Ошибка загрузки профиля';
         console.error(error);
@@ -27,7 +27,7 @@ export const useProfileStore = defineStore('profile', {
       this.isLoading = true;
       this.error = null;
       try {
-        this.profile = await updateProfile(data);
+        this.profile = await userApi.updateProfile(data);
         return true;
       } catch (error) {
         this.error = 'Ошибка сохранения профиля';
